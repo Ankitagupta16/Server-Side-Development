@@ -1,15 +1,18 @@
 const express= require('express');
 const http= require('http');
+const morgan = require('morgan');
 
 const hostname='localhost';
 const port=3000;
 
 //telling application that we are using express module
 const app=express();
+app.use(morgan('dev'));
+
+app.use(express.static(__dirname+'/public'))
 
 //next(optional) is used to invoke additional middleware 
 app.use((req,res,next)=>{
-    console.log(req.headers);
     res.statusCode=200;
     res.setHeader('Content-Type','text/html');
     res.end('<html><body><h1>This is Express Server</h1></body></html>');
