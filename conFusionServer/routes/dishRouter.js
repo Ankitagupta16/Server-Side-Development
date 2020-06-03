@@ -11,6 +11,7 @@ dishRouter.use(bodyParser.json());
 
 
 dishRouter.route('/')
+//GET request for /dishes
 .get((req,res,next) => {
     Dishes.find({})
     .populate('comments.author')
@@ -21,7 +22,9 @@ dishRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post(authenticate.verifyUser,(req, res, next) => {
+
+//POST request for /dishes
+.post(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Dishes.create(req.body)
     .then((dish) => {
         console.log('Dish Created ', dish);
@@ -31,11 +34,15 @@ dishRouter.route('/')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.put(authenticate.verifyUser,(req, res, next) => {
+
+//PUT request for /dishes
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
-.delete(authenticate.verifyUser,(req, res, next) => {
+
+//DELETE request for /dishes
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Dishes.remove({})
     .then((resp) => {
         res.statusCode = 200;
@@ -47,6 +54,7 @@ dishRouter.route('/')
 
 
 dishRouter.route('/:dishId')
+//GET request for /dishes/:dishId
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments.author')
@@ -57,11 +65,15 @@ dishRouter.route('/:dishId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post(authenticate.verifyUser,(req, res, next) => {
+
+//POST request for /dishes/:dishId
+.post(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     res.statusCode = 403;
     res.end('POST operation not supported on /dishes/'+ req.params.dishId);
 })
-.put(authenticate.verifyUser,(req, res, next) => {
+
+//PUT request for /dishes/:dishId
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Dishes.findByIdAndUpdate(req.params.dishId, {
         $set: req.body
     }, { new: true })
@@ -72,7 +84,9 @@ dishRouter.route('/:dishId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.delete(authenticate.verifyUser,(req, res, next) => {
+
+//DELETE request for /dishes/:dishId
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Dishes.findByIdAndRemove(req.params.dishId)
     .then((resp) => {
         res.statusCode = 200;
@@ -83,6 +97,7 @@ dishRouter.route('/:dishId')
 });
 
 dishRouter.route('/:dishId/comments')
+//GET request for /:dishId/comments
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments.author')
@@ -100,6 +115,8 @@ dishRouter.route('/:dishId/comments')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
+
+//POST request for /:dishId/comments
 .post(authenticate.verifyUser,(req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
@@ -126,12 +143,16 @@ dishRouter.route('/:dishId/comments')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
+
+//PUT request for /:dishId/comments
 .put(authenticate.verifyUser,(req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes/'
         + req.params.dishId + '/comments');
 })
-.delete(authenticate.verifyUser,(req, res, next) => {
+
+//DELETE request for /:dishId/comments
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
@@ -155,6 +176,7 @@ dishRouter.route('/:dishId/comments')
 });
 
 dishRouter.route('/:dishId/comments/:commentId')
+//GET request for /:dishId/comments/:commentId
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
     .populate('comments.author')
@@ -177,15 +199,30 @@ dishRouter.route('/:dishId/comments/:commentId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
+
+//POST request for /:dishId/comments/:commentId
 .post(authenticate.verifyUser,(req, res, next) => {
     res.statusCode = 403;
     res.end('POST operation not supported on /dishes/'+ req.params.dishId
         + '/comments/' + req.params.commentId);
 })
+
+//PUT request for /:dishId/comments/:commentId
 .put(authenticate.verifyUser,(req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
-        if (dish != null && dish.comments.id(req.params.commentId) != null) {
+        var thisComment = dish.comments.id(req.params.commentId);
+
+        //verify whether the user is author of the comment
+        if(!thisComment.author._id.equals(req.user._id))
+        {
+            console.log(req.user._id);
+            var err = new Error('You are not the author of this comment');
+            err.status = 403;
+            return next(err);
+        }
+
+        if (dish != null &&  thisComment!= null) {
             if (req.body.rating) {
                 dish.comments.id(req.params.commentId).rating = req.body.rating;
             }
@@ -216,10 +253,23 @@ dishRouter.route('/:dishId/comments/:commentId')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
+
+//DELETE request for /:dishId/comments/:commentId
 .delete(authenticate.verifyUser,(req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
-        if (dish != null && dish.comments.id(req.params.commentId) != null) {
+        var thisComment = dish.comments.id(req.params.commentId);
+
+        //verify whether the user is author of the comment
+        if(!thisComment.author._id.equals(req.user._id))
+        {
+            console.log(req.user._id);
+            var err = new Error('You are not the author of this comment');
+            err.status = 403;
+            return next(err);
+        }
+
+        if (dish != null && thisComment != null) {
             dish.comments.id(req.params.commentId).remove();
             dish.save()
             .then((dish) => {
