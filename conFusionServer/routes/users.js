@@ -4,13 +4,14 @@ const bodyParser = require('body-parser');
 var User = require('../models/user');
 var passport = require('passport');
 var authenticate = require('../authenticate');
+var cors = require('./cors');
 
 router.use(bodyParser.json());
 
 
 
 /* GET users listing. */
-router.get('/',authenticate.verifyUser ,authenticate.verifyAdmin, 
+router.get('/',cors.corsWithOptions,authenticate.verifyUser ,authenticate.verifyAdmin, 
             function(req, res, next) 
             {
               User.find({})
@@ -24,7 +25,7 @@ router.get('/',authenticate.verifyUser ,authenticate.verifyAdmin,
 });
 
 
-router.post('/signup', (req, res, next) => 
+router.post('/signup',cors.corsWithOptions, (req, res, next) => 
 {
   User.register(new User({username: req.body.username}),
   req.body.password,(err,user)=>{
@@ -56,7 +57,7 @@ router.post('/signup', (req, res, next) =>
 });
     
 
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login',cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
   
   //once user is logged in , we will provide it the token whose payload contains only user_id
   var token = authenticate.getToken({_id: req.user._id});
@@ -66,7 +67,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
             status: 'You are successfully logged in!'});
 });
  
-router.get('/logout', (req, res) => {
+router.get('/logout',cors.corsWithOptions, (req, res) => {
   if (req.session) {
     req.session.destroy();
     res.clearCookie('session-id');
