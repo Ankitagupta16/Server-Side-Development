@@ -4,13 +4,15 @@ const mongoose = require('mongoose');
 const authenticate = require('../authenticate');
 const cors = require('./cors');
 
+//Schema import
 const Dishes = require('../models/dishes');
 
-const dishRouter = express.Router();
 
+//declaring router
+const dishRouter = express.Router();
 dishRouter.use(bodyParser.json());
 
-
+//defining routes
 dishRouter.route('/')
 
 .options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); })

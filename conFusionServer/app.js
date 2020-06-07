@@ -11,24 +11,31 @@ var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+
+// user defined routes
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var uploadRouter = require('./routes/uploadRouter');
+var favRouter = require('./routes/favRouter');
 
+// mongoose setup
 const mongoose =require('mongoose');
 
+//Schema import
 const Dishes= require('./models/dishes');
+const Promotions = require('./models/promotions');
+const Leaders = require('./models/leaders');
 
+// connection setup
 const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
+// establishing connection
 connect.then((db) => {
     console.log("Connected correctly to server");
 }, (err) => { console.log(err); });
-
 var app = express();
-
 // Secure traffic only
 app.all('*', (req, res, next) => {
   if (req.secure) {
@@ -46,45 +53,19 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-//app.use(cookieParser('12345-67890-09876-54321'));
-
-/*app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  saveUninitialized: false,
-  resave: false,
-  store: new FileStore()
-}));
-*/
 
 app.use(passport.initialize());
-//app.use(passport.session());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-/*function auth(req,res,next){
-  console.log(req.user);
-
-    if (!req.user) {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      next(err);
-    }
-    else {
-          next();
-    }
-}
-app.use(auth);
-*/
-
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 app.use('/dishes',dishRouter);
 app.use('/promotions',promoRouter);
 app.use('/leaders',leaderRouter);
 app.use('/imageUpload',uploadRouter);
+app.use('/favorites',favRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
